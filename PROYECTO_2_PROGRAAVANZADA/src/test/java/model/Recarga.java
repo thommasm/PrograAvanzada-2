@@ -1,4 +1,42 @@
 package model;
 
-public class Recarga {
+import java.io.Serializable;
+import java.time.LocalDate;
+
+public class Recarga implements Serializable {
+
+    private LocalDate fecha;
+    private long valor;
+
+    public Recarga() {
+    }
+
+    public Recarga(LocalDate fecha, long valor) {
+        this.fecha = fecha;
+        this.valor = valor;
+    }
+
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
+    }
+
+    public long getValor() {
+        return valor;
+    }
+
+    public void setValor(long valor) {
+        this.valor = valor;
+    }
+
+    @Override
+    public String toString() {
+        return "Recarga{" +
+                "fecha=" + fecha +
+                ", valor=" + valor +
+                '}';
+    }
 }
