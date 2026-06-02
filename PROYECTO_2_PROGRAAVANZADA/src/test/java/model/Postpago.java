@@ -1,8 +1,9 @@
 package model;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class Postpago extends Cuenta {
+public class Postpago extends Cuenta implements Serializable {
 
     private long cargoFijo;
 

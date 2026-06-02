@@ -1,9 +1,10 @@
 package model;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-public class Prepago extends Cuenta {
+public class Prepago extends Cuenta implements Serializable {
 
     private int numeroMinutos;
     private ArrayList<Recarga> recargas;

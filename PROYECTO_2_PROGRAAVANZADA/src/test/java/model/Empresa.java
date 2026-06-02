@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-public class Empresa implements Serializable {
+public class Empresa implements IEmpresa, Serializable {
 
     private String nombre;
     private ArrayList<Cliente> clientes;
@@ -66,7 +66,7 @@ public class Empresa implements Serializable {
         Cliente clienteEncontrado = buscarCliente(cliente.getCedula());
 
         if (clienteEncontrado != null) {
-            throw new Exception("No se pudo agregar el cliente. Ya existe un cliente con esa cédula.");
+            throw new Exception("ya existe un cliente con esa cedula");
         }
 
         clientes.add(cliente);
@@ -76,11 +76,10 @@ public class Empresa implements Serializable {
         Cliente cliente = buscarCliente(cedulaCliente);
 
         if (cliente == null) {
-            throw new Exception("No se pudo crear la cuenta prepago. El cliente no existe.");
+            throw new Exception("el cliente no existe");
         }
 
-        long id = Utils.CONSECUTIVO;
-        Utils.CONSECUTIVO = Utils.CONSECUTIVO + 1;
+        long id = Utils.generarIdCuenta();
 
         Prepago cuenta = new Prepago(id, numeroTelefono);
 
@@ -94,11 +93,10 @@ public class Empresa implements Serializable {
         Cliente cliente = buscarCliente(cedulaCliente);
 
         if (cliente == null) {
-            throw new Exception("No se pudo crear la cuenta postpago. El cliente no existe.");
+            throw new Exception("el cliente no existe");
         }
 
-        long id = Utils.CONSECUTIVO;
-        Utils.CONSECUTIVO = Utils.CONSECUTIVO + 1;
+        long id = Utils.generarIdCuenta();
 
         Postpago cuenta = new Postpago(id, numeroTelefono);
 
@@ -112,15 +110,15 @@ public class Empresa implements Serializable {
         Cuenta cuenta = buscarCuenta(idCuenta);
 
         if (cuenta == null) {
-            throw new Exception("No se pudo hacer la recarga. La cuenta no existe.");
+            throw new Exception("la cuenta no existe");
         }
 
         if (!(cuenta instanceof Prepago)) {
-            throw new Exception("No se pudo hacer la recarga. La cuenta no es prepago.");
+            throw new Exception("la cuenta no es prepago");
         }
 
         if (valor <= 0) {
-            throw new Exception("No se pudo hacer la recarga. El valor debe ser mayor a cero.");
+            throw new Exception("el valor debe ser mayor a cero");
         }
 
         Prepago prepago = (Prepago) cuenta;
@@ -133,11 +131,11 @@ public class Empresa implements Serializable {
         Cuenta cuenta = buscarCuenta(idCuenta);
 
         if (cuenta == null) {
-            throw new Exception("No se pudo registrar la llamada. La cuenta no existe.");
+            throw new Exception("la cuenta no existe");
         }
 
         if (duracion <= 0) {
-            throw new Exception("No se pudo registrar la llamada. La duración debe ser mayor a cero.");
+            throw new Exception("la duracion debe ser mayor a cero");
         }
 
         LlamadaNacional llamada = new LlamadaNacional(fecha, duracion, telefonoDestinatario);
@@ -145,6 +143,7 @@ public class Empresa implements Serializable {
         if (cuenta instanceof Postpago) {
             llamada.setValor(0);
             cuenta.agregarLlamada(llamada);
+
         } else if (cuenta instanceof Prepago) {
             Prepago prepago = (Prepago) cuenta;
 
@@ -152,11 +151,11 @@ public class Empresa implements Serializable {
             boolean tieneMinutos = prepago.tieneMinutosDisponibles(fecha.getYear(), fecha.getMonthValue(), duracion);
 
             if (tieneSaldo == false) {
-                throw new Exception("No se pudo registrar la llamada. La cuenta prepago no tiene saldo suficiente.");
+                throw new Exception("no tiene saldo suficiente");
             }
 
             if (tieneMinutos == false) {
-                throw new Exception("No se pudo registrar la llamada. La cuenta prepago no tiene minutos suficientes.");
+                throw new Exception("no tiene minutos suficientes");
             }
 
             cuenta.agregarLlamada(llamada);
@@ -167,17 +166,18 @@ public class Empresa implements Serializable {
         Cuenta cuenta = buscarCuenta(idCuenta);
 
         if (cuenta == null) {
-            throw new Exception("No se pudo registrar la llamada. La cuenta no existe.");
+            throw new Exception("la cuenta no existe");
         }
 
         if (duracion <= 0) {
-            throw new Exception("No se pudo registrar la llamada. La duración debe ser mayor a cero.");
+            throw new Exception("la duracion debe ser mayor a cero");
         }
 
         LlamadaInternacional llamada = new LlamadaInternacional(fecha, duracion, telefonoDestinatario, indicativo);
 
         if (cuenta instanceof Postpago) {
             cuenta.agregarLlamada(llamada);
+
         } else if (cuenta instanceof Prepago) {
             Prepago prepago = (Prepago) cuenta;
 
@@ -185,30 +185,99 @@ public class Empresa implements Serializable {
             boolean tieneMinutos = prepago.tieneMinutosDisponibles(fecha.getYear(), fecha.getMonthValue(), duracion);
 
             if (tieneSaldo == false) {
-                throw new Exception("No se pudo registrar la llamada. La cuenta prepago no tiene saldo suficiente.");
+                throw new Exception("no tiene saldo suficiente");
             }
 
             if (tieneMinutos == false) {
-                throw new Exception("No se pudo registrar la llamada. La cuenta prepago no tiene minutos suficientes.");
+                throw new Exception("no tiene minutos suficientes");
             }
 
             cuenta.agregarLlamada(llamada);
         }
     }
 
+    public ArrayList<Cliente> ordenarClientesPorCedula(ArrayList<Cliente> listaClientes) {
+        ArrayList<Cliente> ordenados = new ArrayList<>();
+
+        for (Cliente cliente : listaClientes) {
+            ordenados.add(cliente);
+        }
+
+        for (int i = 0; i < ordenados.size() - 1; i++) {
+            for (int j = 0; j < ordenados.size() - 1 - i; j++) {
+
+                Cliente clienteActual = ordenados.get(j);
+                Cliente clienteSiguiente = ordenados.get(j + 1);
+
+                if (clienteActual.getCedula().compareTo(clienteSiguiente.getCedula()) > 0) {
+                    ordenados.set(j, clienteSiguiente);
+                    ordenados.set(j + 1, clienteActual);
+                }
+            }
+        }
+
+        return ordenados;
+    }
+
+    public ArrayList<Llamada> ordenarLlamadasPorFecha(ArrayList<Llamada> listaLlamadas) {
+        ArrayList<Llamada> ordenadas = new ArrayList<>();
+
+        for (Llamada llamada : listaLlamadas) {
+            ordenadas.add(llamada);
+        }
+
+        for (int i = 0; i < ordenadas.size() - 1; i++) {
+            for (int j = 0; j < ordenadas.size() - 1 - i; j++) {
+
+                Llamada llamadaActual = ordenadas.get(j);
+                Llamada llamadaSiguiente = ordenadas.get(j + 1);
+
+                if (llamadaActual.getFecha().isAfter(llamadaSiguiente.getFecha())) {
+                    ordenadas.set(j, llamadaSiguiente);
+                    ordenadas.set(j + 1, llamadaActual);
+                }
+            }
+        }
+
+        return ordenadas;
+    }
+
+    public ArrayList<Recarga> ordenarRecargasPorFecha(ArrayList<Recarga> listaRecargas) {
+        ArrayList<Recarga> ordenadas = new ArrayList<>();
+
+        for (Recarga recarga : listaRecargas) {
+            ordenadas.add(recarga);
+        }
+
+        for (int i = 0; i < ordenadas.size() - 1; i++) {
+            for (int j = 0; j < ordenadas.size() - 1 - i; j++) {
+
+                Recarga recargaActual = ordenadas.get(j);
+                Recarga recargaSiguiente = ordenadas.get(j + 1);
+
+                if (recargaActual.getFecha().isAfter(recargaSiguiente.getFecha())) {
+                    ordenadas.set(j, recargaSiguiente);
+                    ordenadas.set(j + 1, recargaActual);
+                }
+            }
+        }
+
+        return ordenadas;
+    }
+
     public String reportePostpagoCliente(String cedulaCliente, int anio, int mes) throws Exception {
         Cliente cliente = buscarCliente(cedulaCliente);
 
         if (cliente == null) {
-            throw new Exception("No se pudo generar el reporte. El cliente no existe.");
+            throw new Exception("el cliente no existe");
         }
 
         String reporte = "";
         boolean tienePostpago = false;
 
-        reporte = reporte + "REPORTE POSTPAGO\n";
-        reporte = reporte + "Cliente: " + cliente.getNombre() + "\n";
-        reporte = reporte + "Cédula: " + cliente.getCedula() + "\n\n";
+        reporte = reporte + "reporte postpago\n";
+        reporte = reporte + "cliente: " + cliente.getNombre() + "\n";
+        reporte = reporte + "cedula: " + cliente.getCedula() + "\n\n";
 
         for (Cuenta cuenta : cliente.getCuentas()) {
             if (cuenta instanceof Postpago) {
@@ -216,33 +285,32 @@ public class Empresa implements Serializable {
 
                 Postpago postpago = (Postpago) cuenta;
 
-                reporte = reporte + "Cuenta postpago ID: " + postpago.getId() + "\n";
-                reporte = reporte + "Teléfono: " + postpago.getNumeroTelefono() + "\n";
-                reporte = reporte + "Cargo fijo: " + postpago.getCargoFijo() + "\n";
-                reporte = reporte + "Llamadas del mes:\n";
+                reporte = reporte + "cuenta postpago id: " + postpago.getId() + "\n";
+                reporte = reporte + "telefono: " + postpago.getNumeroTelefono() + "\n";
+                reporte = reporte + "cargo fijo: " + postpago.getCargoFijo() + "\n";
+                reporte = reporte + "llamadas del mes:\n";
 
                 int totalDuracion = 0;
                 long totalValorLlamadas = 0;
 
-                for (Llamada llamada : postpago.getLlamadas()) {
-                    LocalDate fecha = llamada.getFecha();
+                ArrayList<Llamada> llamadasMes = postpago.obtenerLlamadasMes(anio, mes);
+                ArrayList<Llamada> llamadasOrdenadas = ordenarLlamadasPorFecha(llamadasMes);
 
-                    if (fecha.getYear() == anio && fecha.getMonthValue() == mes) {
-                        reporte = reporte + llamada.toString() + "\n";
+                for (Llamada llamada : llamadasOrdenadas) {
+                    reporte = reporte + llamada.toString() + "\n";
 
-                        totalDuracion = totalDuracion + llamada.getDuracion();
-                        totalValorLlamadas = totalValorLlamadas + llamada.getValor();
-                    }
+                    totalDuracion = totalDuracion + llamada.getDuracion();
+                    totalValorLlamadas = totalValorLlamadas + llamada.getValor();
                 }
 
-                reporte = reporte + "Total duración: " + totalDuracion + " minutos\n";
-                reporte = reporte + "Total valor llamadas: " + totalValorLlamadas + "\n";
-                reporte = reporte + "Total a pagar: " + postpago.obtenerPagoCuenta(anio, mes) + "\n\n";
+                reporte = reporte + "total duracion: " + totalDuracion + " minutos\n";
+                reporte = reporte + "total valor llamadas: " + totalValorLlamadas + "\n";
+                reporte = reporte + "total a pagar: " + postpago.obtenerPagoCuenta(anio, mes) + "\n\n";
             }
         }
 
         if (tienePostpago == false) {
-            reporte = reporte + "El cliente no tiene cuentas postpago.\n";
+            reporte = reporte + "el cliente no tiene cuentas postpago\n";
         }
 
         return reporte;
@@ -254,44 +322,44 @@ public class Empresa implements Serializable {
         int totalGeneralDuracion = 0;
         boolean existenCuentasPrepago = false;
 
-        reporte = reporte + "REPORTE PREPAGO\n\n";
+        reporte = reporte + "reporte prepago\n\n";
 
-        for (Cliente cliente : clientes) {
+        ArrayList<Cliente> clientesOrdenados = ordenarClientesPorCedula(clientes);
+
+        for (Cliente cliente : clientesOrdenados) {
             for (Cuenta cuenta : cliente.getCuentas()) {
                 if (cuenta instanceof Prepago) {
                     existenCuentasPrepago = true;
 
                     Prepago prepago = (Prepago) cuenta;
 
-                    reporte = reporte + "Cliente: " + cliente.getNombre() + "\n";
-                    reporte = reporte + "Cédula: " + cliente.getCedula() + "\n";
-                    reporte = reporte + "Cuenta prepago ID: " + prepago.getId() + "\n";
-                    reporte = reporte + "Teléfono: " + prepago.getNumeroTelefono() + "\n";
+                    reporte = reporte + "cliente: " + cliente.getNombre() + "\n";
+                    reporte = reporte + "cedula: " + cliente.getCedula() + "\n";
+                    reporte = reporte + "cuenta prepago id: " + prepago.getId() + "\n";
+                    reporte = reporte + "telefono: " + prepago.getNumeroTelefono() + "\n";
 
                     long totalRecargas = prepago.calcularTotalRecargasMes(anio, mes);
                     int totalDuracion = prepago.calcularDuracionLlamadasMes(anio, mes);
 
-                    reporte = reporte + "Total recargas del mes: " + totalRecargas + "\n";
-                    reporte = reporte + "Total duración llamadas: " + totalDuracion + " minutos\n";
+                    reporte = reporte + "total recargas del mes: " + totalRecargas + "\n";
+                    reporte = reporte + "total duracion llamadas: " + totalDuracion + " minutos\n";
 
-                    reporte = reporte + "Recargas del mes:\n";
+                    reporte = reporte + "recargas del mes:\n";
 
-                    for (Recarga recarga : prepago.getRecargas()) {
-                        LocalDate fecha = recarga.getFecha();
+                    ArrayList<Recarga> recargasMes = prepago.obtenerRecargasMes(anio, mes);
+                    ArrayList<Recarga> recargasOrdenadas = ordenarRecargasPorFecha(recargasMes);
 
-                        if (fecha.getYear() == anio && fecha.getMonthValue() == mes) {
-                            reporte = reporte + recarga.toString() + "\n";
-                        }
+                    for (Recarga recarga : recargasOrdenadas) {
+                        reporte = reporte + recarga.toString() + "\n";
                     }
 
-                    reporte = reporte + "Llamadas del mes:\n";
+                    reporte = reporte + "llamadas del mes:\n";
 
-                    for (Llamada llamada : prepago.getLlamadas()) {
-                        LocalDate fecha = llamada.getFecha();
+                    ArrayList<Llamada> llamadasMes = prepago.obtenerLlamadasMes(anio, mes);
+                    ArrayList<Llamada> llamadasOrdenadas = ordenarLlamadasPorFecha(llamadasMes);
 
-                        if (fecha.getYear() == anio && fecha.getMonthValue() == mes) {
-                            reporte = reporte + llamada.toString() + "\n";
-                        }
+                    for (Llamada llamada : llamadasOrdenadas) {
+                        reporte = reporte + llamada.toString() + "\n";
                     }
 
                     reporte = reporte + "\n";
@@ -303,16 +371,15 @@ public class Empresa implements Serializable {
         }
 
         if (existenCuentasPrepago == false) {
-            reporte = reporte + "No hay cuentas prepago registradas.\n";
+            reporte = reporte + "no hay cuentas prepago registradas\n";
         }
 
-        reporte = reporte + "TOTAL GENERAL RECARGAS: " + totalGeneralRecargas + "\n";
-        reporte = reporte + "TOTAL GENERAL DURACIÓN: " + totalGeneralDuracion + " minutos\n";
+        reporte = reporte + "total general recargas: " + totalGeneralRecargas + "\n";
+        reporte = reporte + "total general duracion: " + totalGeneralDuracion + " minutos\n";
 
         return reporte;
     }
 
-    @Override
     public String toString() {
         return "Empresa{" +
                 "nombre='" + nombre + '\'' +

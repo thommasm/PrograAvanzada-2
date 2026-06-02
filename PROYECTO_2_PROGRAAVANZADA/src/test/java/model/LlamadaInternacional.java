@@ -2,9 +2,10 @@ package model;
 
 import utils.Utils;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class LlamadaInternacional extends Llamada {
+public class LlamadaInternacional extends Llamada implements Serializable {
 
     private Indicativo indicativo;
 
